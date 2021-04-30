@@ -1,0 +1,72 @@
+
+# Using a Support Vector Machine to predict score with model selection.
+```{r}
+memory.limit(size=220000)
+library(e1071)
+library(dplyr)
+library(leaps)
+library(ISLR)
+library(MASS)
+library(car)
+```
+
+
+```{r}
+mlb <- read.csv("mlb_elo.csv")
+str(mlb)
+
+mlb <- mlb %>% 
+  dplyr::select(-date, -neutral, -playoff, -team1, -team2, -pitcher1, -pitcher2) %>%
+  filter(season >= 1920) %>%
+  filter(season < 2020) %>%
+  mutate(diff = score1 - score2) %>%
+  mutate(total_runs=score1+score2) %>%
+  mutate(h_win = ifelse(diff>0, 1, 0)) %>%
+  mutate(margin = abs(diff)) %>%
+  mutate(elo_diff=elo1_pre - elo2_pre) %>%
+  mutate(rating_diff=rating1_pre - rating2_pre) %>%
+  dplyr::select(-elo1_pre, -elo2_pre, -elo_prob1, -elo_prob2, -rating2_pre, -rating1_pre,
+                -rating_prob1, -rating_prob2, -rating1_post, -rating2_post,
+                -elo1_post, -elo2_post)
+
+head(mlb)
+```
+# Train-Test Split
+```{r}
+set.seed(53)
+train = sample(1:nrow(mlb), nrow(mlb)/2)
+test=(-train)
+```
+
+# Model Selection
+```{r}
+n = nrow(mlb[train,])
+regfit = regsubsets(diff~.,data=mlb[train,]) 
+regfit.sum = summary(regfit)
+  p = rowSums(regfit.sum$which) #number of predictors in the model 
+adjr2 = regfit.sum$adjr2
+cp = regfit.sum$cp
+rss = regfit.sum$rss
+AIC = n*log(rss/n) + 2*(p)
+BIC = n*log(rss/n) + (p)*log(n)
+
+which.min(BIC)
+which.min(AIC)
+which.min(cp)
+which.max(adjr2)
+
+coef(regfit, 8)
+```
+
+# LM Model
+```{r}
+mlb.lm <- lm(diff~pitcher1_rgs+pitcher2_rgs+pitcher1_adj+pitcher2_adj+score1+h_win+elo_diff+rating_diff, data=mlb[train,])
+mlb.lm.sum <- summary(mlb.lm)
+mlb.lm.sum
+```
+
+
+
+
+
+
