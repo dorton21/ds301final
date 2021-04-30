@@ -1,0 +1,98 @@
+---
+title: "DS 301 Final Project"
+author: "Eric Steyer"
+date: "4/19/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+mlb = read.csv("mlb_elo.csv")
+```
+
+```{r}
+mlb$diff = mlb$score1 - mlb$score2
+```
+
+```{r}
+mlb$margin = abs(mlb$diff)
+```
+
+```{r}
+mlb$h_win = ifelse(mlb$diff>0, 1, 0)
+```
+
+```{r}
+mlb$total_score = mlb$score1 + mlb$score2
+```
+
+```{r}
+mlb$isplayoff = as.numeric(mlb$playoff)
+mlb$isplayoff = ifelse(mlb$isplayoff==1, 0, 1)
+```
+
+```{r}
+mlb = mlb %>% filter(season < 2021, season >= 1920)
+```
+
+```{r}
+set.seed(1)
+n = nrow(mlb)
+train_index = sample(1:n, n/2, replace=FALSE)
+train = mlb[train_index,]
+test = mlb[-train_index,]
+```
+
+```{r}
+mlb %>% group_by(isplayoff) %>% summarise(avg = mean(total_score))
+```
+
+```{r}
+lda.fit = lda(h_win~elo_prob1,data=train)
+lda.pred = predict(lda.fit,test)
+table(lda.pred$class,test$h_win)
+mean(lda.pred$class!=test$h_win)
+```
+
+```{r}
+lda.fit = lda(h_win~rating_prob1,data=train)
+lda.pred = predict(lda.fit,test)
+table(lda.pred$class,test$h_win)
+mean(lda.pred$class!=test$h_win)
+```
+```{r}
+qda.fit = qda(h_win~elo_prob1,data=train)
+qda.pred = predict(qda.fit,test)
+table(qda.pred$class,test$h_win)
+mean(qda.pred$class!=test$h_win)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
