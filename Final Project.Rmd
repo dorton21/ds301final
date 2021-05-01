@@ -10,6 +10,13 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
+library(tidyr)
+library(MASS)
+library(caret)
+library(class)
+```
+
+```{r}
 mlb = read.csv("mlb_elo.csv")
 ```
 
@@ -39,6 +46,33 @@ mlb = mlb %>% filter(season < 2021, season >= 1920)
 ```
 
 ```{r}
+mlb$elo_diff = mlb$elo1_pre - mlb$elo2_pre
+mlb$rating_diff = mlb$rating1_pre - mlb$rating2_pre
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
 set.seed(1)
 n = nrow(mlb)
 train_index = sample(1:n, n/2, replace=FALSE)
@@ -46,9 +80,29 @@ train = mlb[train_index,]
 test = mlb[-train_index,]
 ```
 
+
 ```{r}
-mlb %>% group_by(isplayoff) %>% summarise(avg = mean(total_score))
+logreg = glm(h_win~elo_prob1, data=train, family='binomial')
+
+glm.prob = predict(logreg,test,type='response')
+
+glm.pred = rep(0,nrow(test))
+glm.pred[glm.prob>.5] = 1
+table(glm.pred,test$h_win)
+mean(glm.pred!=test$h_win)
 ```
+
+```{r}
+logreg = glm(h_win~rating_prob1, data=train, family='binomial')
+
+glm.prob = predict(logreg,test,type='response')
+
+glm.pred = rep(0,nrow(test))
+glm.pred[glm.prob>.5] = 1
+table(glm.pred,test$h_win)
+mean(glm.pred!=test$h_win)
+```
+
 
 ```{r}
 lda.fit = lda(h_win~elo_prob1,data=train)
@@ -63,12 +117,93 @@ lda.pred = predict(lda.fit,test)
 table(lda.pred$class,test$h_win)
 mean(lda.pred$class!=test$h_win)
 ```
+
 ```{r}
 qda.fit = qda(h_win~elo_prob1,data=train)
 qda.pred = predict(qda.fit,test)
 table(qda.pred$class,test$h_win)
 mean(qda.pred$class!=test$h_win)
 ```
+
+```{r}
+qda.fit = qda(h_win~rating_prob1,data=train)
+qda.pred = predict(qda.fit,test)
+table(qda.pred$class,test$h_win)
+mean(qda.pred$class!=test$h_win)
+```
+
+```{r}
+standardized.X_train = scale(train$elo_prob1)
+standardized.X_test = scale(test$elo_prob1)
+
+flds <- createFolds(train$h_win, k = 5, list = TRUE, returnTrain = FALSE)
+
+cv_error = matrix(0,5,3)
+K= c(1,3,5)
+for(j in 1:length(K)){
+  k = K[j]
+  for(i in 1:5){
+    test_index = flds[[i]]
+    
+    testX = standardized.X_test
+    
+    trainX = standardized.X_train
+    
+    trainY = train$h_win
+    
+    testY = test$h_win
+    
+    knn.pred = knn(trainX,testX,trainY,k=k)
+    cv_error[i,j] = mean(testY!=knn.pred)
+  }
+}
+
+apply(cv_error,2,mean)
+```
+```{r}
+knn.pred = knn(standardized.X_train, standardized.X_test, train$h_win, k=5)
+
+table(knn.pred,test$h_win)
+mean(knn.pred!=test$h_win)
+```
+
+```{r}
+standardized.X_train = scale(train$rating_prob1)
+standardized.X_test = scale(test$rating_prob1)
+
+flds <- createFolds(train$h_win, k = 5, list = TRUE, returnTrain = FALSE)
+
+cv_error = matrix(0,5,3)
+K= c(5,3,5)
+for(j in 1:length(K)){
+  k = K[j]
+  for(i in 1:5){
+    test_index = flds[[i]]
+    
+    testX = standardized.X_test
+    
+    trainX = standardized.X_train
+    
+    trainY = train$h_win
+    
+    testY = test$h_win
+    
+    knn.pred = knn(trainX,testX,trainY,k=k)
+    cv_error[i,j] = mean(testY!=knn.pred)
+  }
+}
+
+apply(cv_error,2,mean)
+```
+
+```{r}
+knn.pred = knn(standardized.X_train, standardized.X_test, train$h_win, k=5)
+
+table(knn.pred,test$h_win)
+mean(knn.pred!=test$h_win)
+```
+
+
 
 
 
