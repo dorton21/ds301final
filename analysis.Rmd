@@ -8,6 +8,8 @@ library(leaps)
 library(ISLR)
 library(MASS)
 library(car)
+library(glmnet)
+library(caret)
 ```
 
 
@@ -65,8 +67,24 @@ mlb.lm.sum <- summary(mlb.lm)
 mlb.lm.sum
 ```
 
+# Support Vector Machine Test 1 (Full Model)
 
+```{r}
+mlb.svm1 <- svm(diff~.,mlb[train,])
+summary(mlb.svm1)
+mlb.predict1 <- predict(mlb.svm1, mlb[test,])
+```
 
+# Support Vector Machine Test 2 (Based on Model Selection)
+```{r}
+mlb.svm2 <- svm(diff~pitcher1_rgs+pitcher2_rgs+pitcher1_adj+pitcher2_adj+score1+h_win+elo_diff+rating_diff, mlb[train,])
+summary(mlb.svm2)
+mlb.predict2 <- predict(mlb.svm2, mlb[test,])
+```
 
-
-
+# Support Vector Machine Test 3 (Based on Linear Model Significant Coeff. p-value Test)
+```{r}
+mlb.svm2 <- svm(diff~pitcher1_rgs+score1+h_win+rating_diff, mlb[train,])
+summary(mlb.svm2)
+mlb.predict2 <- predict(mlb.svm2, mlb[test,])
+```
