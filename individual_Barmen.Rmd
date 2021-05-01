@@ -9,22 +9,14 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r}
+ELO = read.csv('C:/Users/zachl/Documents/FINALPROJECT/mlb_elo.csv')
+ELO = ELO[ELO$season >1920,]
+ELO = ELO[ELO$season <2020,]
+ELO$RunDiff = ELO$score1 - ELO$score2
+ELO$TotalRuns = ELO$score1 + ELO$score2
+ELO$HomeWin = ifelse(ELO$RunDiff>0, 1, 0)
+ELO$EloDiff = ELO$elo1_pre -ELO$elo2_pre
+ELO = subset(ELO, select = -c(date,neutral,playoff,team1,team2,elo1_post,elo2_post,rating1_post,rating2_post,pitcher1,pitcher2) )
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
